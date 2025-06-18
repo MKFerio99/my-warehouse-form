@@ -574,343 +574,42 @@
         const loadingSpinner = document.getElementById('loadingSpinner');
 
 
-        // Initialize the form when the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('DOMContentLoaded fired'); // Debugging log
-            loadingSpinner.style.display = 'block'; // Show spinner on load
+        // --- Helper Functions (Defined at the top for scope) ---
+
+        // Helper to fetch list data (Vendors, Items, Parts, Processes, mainSheetData)
+        async function fetchList(listType) {
+            console.log(`[fetchList] Fetching ${listType}...`); // Debugging log
             try {
-                console.log('webAppUrl:', webAppUrl); // Debugging log
-                // Fetch data from Google Sheets first
-                console.log('Fetching vendors...'); // Debugging log
-                allVendorProcessData = await fetchList('vendors');
-                console.log('Vendors fetched:', allVendorProcessData.length); // Debugging log
+                const response = await fetch(webAppUrl, {
+                    method: 'POST', // Always use POST for Apps Script web apps with JSON body
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'fetchList', listType: listType }),
+                });
 
-                console.log('Fetching BOM...'); // Debugging log
-                allBomData = await fetchList('bom');
-                console.log('BOM fetched:', allBomData.length); // Debugging log
-
-                console.log('Fetching processes...'); // Debugging log
-                allProcessMappingData = await fetchList('processes');
-                console.log('Processes fetched:', allProcessMappingData.length); // Debugging log
-
-                setupEventListeners();
-                setupDropdowns();
-                resetForm(); // Call resetForm to set initial state of the form
-
-                // Initial population of dropdowns using fetched data
-                const uniqueVendorNames = [...new Set(allVendorProcessData.map(item => item.vendorName))];
-                populateDropdown('vendorDropdown', uniqueVendorNames, handleVendorSelect);
-
-                const uniqueItemNames = [...new Set(allBomData.map(item => item['Item Name']))];
-                populateDropdown('itemDropdown', uniqueItemNames, handleItemSelect);
-
-                populateDropdown('processDropdown', [], handleProcessSelect); // Initially empty, populated by vendor selection
-            } catch (error) {
-                console.error("Initialization failed:", error);
-                alert("Failed to load initial data. Please check console for details.");
-            } finally {
-                loadingSpinner.style.display = 'none'; // Hide spinner
-            }
-        });
-
-        // Setup all event listeners for buttons and input fields
-        function setupEventListeners() {
-            // Event listeners for mode selection buttons
-            manufactureBtn.addEventListener('click', () => selectMode('manufacture'));
-            readyMadeBtn.addEventListener('click', () => selectMode('ready-made'));
-            
-            // Event listeners for operation selection buttons
-            newBtn.addEventListener('click', () => selectNewOngoingOperation('new'));
-            ongoingBtn.addEventListener('click', () => selectNewOngoingOperation('ongoing'));
-            inBtn.addEventListener('click', () => selectInOutOperation('in'));
-            outBtn.addEventListener('click', () => selectInOutOperation('out'));
-
-            // Event listeners for vendor, process, item name input for dropdown functionality
-            vendorName.addEventListener('input', handleVendorInput);
-            vendorName.addEventListener('focus', () => showDropdown('vendorDropdown'));
-            vendorName.addEventListener('blur', () => setTimeout(() => hideDropdown('vendorDropdown'), 200));
-
-            processName.addEventListener('input', handleProcessInput);
-            processName.addEventListener('focus', () => showDropdown('processDropdown'));
-            processName.addEventListener('blur', () => setTimeout(() => hideDropdown('processDropdown'), 200));
-
-            itemName.addEventListener('input', handleItemInput);
-            itemName.addEventListener('focus', () => showDropdown('itemDropdown'));
-            itemName.addEventListener('blur', () => setTimeout(() => hideDropdown('itemDropdown'), 200));
-
-            // Event listener for the form submission
-            document.getElementById('warehouseForm').addEventListener('submit', handleSubmit);
-            // Event listener for adding a manual part row to the table
-            addPartBtn.addEventListener('click', addManualPart);
-            // Event listener for the new reset button
-            resetBtn.addEventListener('click', resetForm);
-
-            // Event listener for Work Order select change
-            workOrder.addEventListener('change', async () => {
-                if (currentMode === 'manufacture' && ongoingBtn.classList.contains('active') && workOrder.value) {
-                    await fetchAndPopulateWorkOrderData(workOrder.value);
+                if (!response.ok) {
+                    const errorText = await response.text(); // Get raw error text from response
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}. Response: ${errorText}`);
+                }
+                const result = await response.json();
+                if (result.result === 'success' && result.data) {
+                    console.log(`[fetchList] ${listType} fetched successfully: ${result.data.length} items.`); // Debugging log
+                    return result.data;
                 } else {
-                    // If work order is cleared or not in ongoing mode, clear the parts table
-                    clearPartsTable();
-                    // Re-generate default table based on current item and mode if applicable
-                    if (selectedItem && currentMode === 'manufacture') {
-                         generatePartsTable(selectedItem);
-                    } else if (currentMode === 'ready-made') {
-                        document.getElementById('partsTableHead').innerHTML = '<tr><th>Part Name</th><th>Quantity</th><th>Action</th></tr>';
-                        document.getElementById('partsTableBody').innerHTML = '';
-                    }
+                    console.error(`[fetchList] Error fetching ${listType}:`, result.error);
+                    throw new Error(`Error fetching ${listType}: ${result.error}`);
                 }
-            });
-        }
-
-        // Handles selection of 'Manufacture' or 'Ready-Made' mode
-        function selectMode(mode) {
-            currentMode = mode; // Set the current mode
-            
-            // Update active state for mode buttons (mutually exclusive)
-            manufactureBtn.classList.remove('active');
-            readyMadeBtn.classList.remove('active');
-            if (mode === 'manufacture') {
-                manufactureBtn.classList.add('active');
-            } else { // 'ready-made'
-                readyMadeBtn.classList.add('active');
-            }
-            
-            // Reset most form fields while keeping the selected mode highlighted
-            resetForm(true); 
-            // Update the enabled/disabled state and default active state of operation buttons based on the new mode
-            updateOperationButtons(); 
-        }
-
-        // Handles selection within the 'New' / 'Ongoing' group
-        function selectNewOngoingOperation(operation) {
-            if (newBtn.disabled && ongoingBtn.disabled) return; // Prevent selection if disabled
-
-            newBtn.classList.remove('active');
-            ongoingBtn.classList.remove('active');
-
-            if (operation === 'new') {
-                newBtn.classList.add('active');
-                selectedNewOngoingOp = 'new';
-            } else if (operation === 'ongoing') {
-                ongoingBtn.classList.add('active');
-                selectedNewOngoingOp = 'ongoing';
-            }
-
-            // Adjust form fields based on the selected New/Ongoing operation within Manufacture mode
-            handleOperationSpecificFields();
-        }
-
-        // Handles selection within the 'IN' / 'OUT' group
-        function selectInOutOperation(operation) {
-            // IN/OUT buttons are always enabled, so no need for `disabled` check here.
-            inBtn.classList.remove('active');
-            outBtn.classList.remove('active');
-
-            if (operation === 'in') {
-                inBtn.classList.add('active');
-                selectedInOutOp = 'in';
-            } else if (operation === 'out') {
-                outBtn.classList.add('active');
-                selectedInOutOp = 'out';
-            }
-
-            // Adjust form fields based on the selected IN/OUT operation and current mode
-            handleOperationSpecificFields();
-        }
-
-        // Central function to handle logic for fields that change based on combined operations and mode
-        function handleOperationSpecificFields() {
-            let autoGenerateWorkOrder = true;
-            let workOrderText = '';
-            let workOrderReadOnly = true;
-            
-            // Always clear item and parts table related display for fresh selection
-            itemName.value = '';
-            selectedItem = null;
-            partsTableContainer.style.display = 'none';
-            document.getElementById('partsTableHead').innerHTML = '';
-            document.getElementById('partsTableBody').innerHTML = '';
-            addPartBtn.style.display = 'none';
-
-            if (currentMode === 'manufacture') {
-                quantity.disabled = true; // Quantity disabled for Manufacture
-                processName.disabled = false; // Process editable for Manufacture
-
-                if (selectedNewOngoingOp === 'new') {
-                    workOrderText = 'WO-' + Date.now();
-                    processName.value = 'TURNING'; // Auto-fill for New Manufacture
-                    selectedProcess = 'TURNING';
-                    filterVendorsByProcess('TURNING');
-                } else if (selectedNewOngoingOp === 'ongoing') {
-                    autoGenerateWorkOrder = false; // Work order selected from list
-                    loadOngoingWorkOrders(); // Load work orders from sheet
-                    workOrderReadOnly = false;
-                } else { // If neither New nor Ongoing is explicitly selected, for example, just IN/OUT is picked
-                    workOrderText = 'WO-' + Date.now(); // Still auto-generate a WO for IN/OUT without New/Ongoing context
-                }
-                
-            } else if (currentMode === 'ready-made') {
-                quantity.disabled = false;   // Quantity enabled for Ready-Made
-                processName.value = '';      // Clear and disable process for Ready-Made
-                selectedProcess = null;
-                vendorName.value = '';
-                selectedVendor = null;
-                processName.disabled = true; // Ensure disabled state
-
-                partsTableContainer.style.display = 'block'; // Show parts table for manual entry
-                document.getElementById('partsTableHead').innerHTML = '<tr><th>Part Name</th><th>Quantity</th><th>Action</th></tr>';
-                addPartBtn.style.display = 'block'; // Show Add Part button
-
-                workOrderText = 'RM-WO-' + Date.now(); // Always generate new WO for Ready-Made
-            }
-
-            // Apply work order settings
-            if (autoGenerateWorkOrder) {
-                workOrder.innerHTML = `<option value="${workOrderText}" selected>${workOrderText}</option>`;
-                workOrder.classList.add('work-order-display');
-                workOrder.disabled = workOrderReadOnly;
-            } else {
-                workOrder.innerHTML = '<option value="">Select Work Order</option>';
-                workOrder.classList.remove('work-order-display');
-                workOrder.disabled = workOrderReadOnly;
+            } catch (error) {
+                console.error(`[fetchList] Failed to fetch ${listType}:`, error);
+                throw error; // Re-throw to be caught by DOMContentLoaded or other callers
             }
         }
 
-        // Setup dropdown event listeners (for custom input-based dropdowns)
-        function setupDropdowns() {
-            // These are set in setupEventListeners now, but this function can remain for clarity
-            // if you add other dropdowns that don't need input event listeners
-        }
-
-        // Handle input change for vendor name to filter dropdown
-        function handleVendorInput() {
-            const query = vendorName.value.toLowerCase();
-            let vendors = [...new Set(allVendorProcessData.map(item => item.vendorName))]; // Use fetched data
-            
-            // If a process is already selected, filter vendors by that process
-            if (selectedProcess) {
-                vendors = allVendorProcessData
-                    .filter(item => item.processName === selectedProcess)
-                    .map(item => item.vendorName);
-            }
-            
-            const filtered = vendors.filter(vendor => 
-                vendor.toLowerCase().includes(query)
-            );
-            populateDropdown('vendorDropdown', filtered, handleVendorSelect); // Populate and show
-            showDropdown('vendorDropdown');
-        }
-
-        // Handle input change for process name to filter dropdown
-        function handleProcessInput() {
-            const query = processName.value.toLowerCase();
-            let processes = [...new Set(allVendorProcessData.map(item => item.processName))]; // Use fetched data
-            
-            // If a vendor is already selected, filter processes by that vendor
-            if (selectedVendor) {
-                processes = allVendorProcessData
-                    .filter(item => item.vendorName === selectedVendor)
-                    .map(item => item.processName);
-            }
-            
-            const filtered = processes.filter(process => 
-                process.toLowerCase().includes(query)
-            );
-            populateDropdown('processDropdown', filtered, handleProcessSelect); // Populate and show
-            showDropdown('processDropdown');
-        }
-
-        // Handle input change for item name to filter dropdown
-        function handleItemInput() {
-            const query = itemName.value.toLowerCase();
-            const items = [...new Set(allBomData.map(item => item['Item Name']))]; // Use fetched data
-            const filtered = items.filter(item => 
-                item.toLowerCase().includes(query)
-            );
-            populateDropdown('itemDropdown', filtered, handleItemSelect); // Populate and show
-            showDropdown('itemDropdown');
-        }
-
-        // Handle selection of a vendor from the dropdown	
-        function handleVendorSelect(vendor) {
-            selectedVendor = vendor; // Set the selected vendor
-            vendorName.value = vendor; // Update input field
-            hideDropdown('vendorDropdown'); // Hide dropdown
-            
-            // After vendor selection, filter available processes based on this vendor
-            const processes = allVendorProcessData // Use fetched data
-                .filter(item => item.vendorName === vendor)
-                .map(item => item.processName);
-            // If only one process is available for this vendor and no process is selected yet, auto-select it
-            if (processes.length === 1 && !selectedProcess) {
-                selectedProcess = processes[0];
-                processName.value = processes[0];
-            }
-            // Ensure process dropdown reflects current vendor's processes
-            filterProcessesByVendor(vendor);
-        }
-
-        // Handle selection of a process from the dropdown
-        function handleProcessSelect(process) {
-            selectedProcess = process; // Set the selected process
-            processName.value = process; // Update input field
-            hideDropdown('processDropdown'); // Hide dropdown
-            
-            // After process selection, filter available vendors based on this process
-            filterVendorsByProcess(process);
-        }
-
-        // Handle selection of an item from the dropdown
-        function handleItemSelect(item) {
-            selectedItem = item; // Set the selected item
-            itemName.value = item; // Update input field
-            hideDropdown('itemDropdown'); // Hide dropdown
-
-            // Generate parts table based on mode and operation
-            // For Manufacture (New/Ongoing/IN/OUT), parts are auto-generated from BOM and processes
-            if (currentMode === 'manufacture') {
-                generatePartsTable(item); 
-                addPartBtn.style.display = 'none'; // Hide manual add part button for Manufacture
-            } 
-            // For Ready-Made, parts are manually added
-            else if (currentMode === 'ready-made') {
-                document.getElementById('partsTableHead').innerHTML = '<tr><th>Part Name</th><th>Quantity</th><th>Action</th></tr>'; // Added Action header
-                document.getElementById('partsTableBody').innerHTML = ''; // Clear any existing rows
-                partsTableContainer.style.display = 'block'; // Show table container
-                addPartBtn.style.display = 'block'; // Show manual add part button
-            }
-        }
-
-        // Filter vendor dropdown items based on selected process
-        function filterVendorsByProcess(process) {
-            const vendors = allVendorProcessData // Use fetched data
-                .filter(item => item.processName === process)
-                .map(item => item.vendorName);
-            // If a vendor is currently selected but doesn't offer this process, clear the vendor selection
-            if (selectedVendor && !vendors.includes(selectedVendor)) {
-                vendorName.value = '';
-                selectedVendor = null;
-            }
-        }
-
-        // Filter process dropdown items based on selected vendor
-        function filterProcessesByVendor(vendor) {
-            const processes = allVendorProcessData // Use fetched data
-                .filter(item => item.vendorName === vendor)
-                .map(item => item.processName);
-            // If a process is currently selected but is not offered by this vendor, clear the process selection
-            if (selectedProcess && !processes.includes(selectedProcess)) {
-                processName.value = '';
-                selectedProcess = null;
-            }
-        }
-
-        // Populates a generic dropdown list (for custom input-based dropdowns)
+        // Helper to populate dropdowns (for custom input-based dropdowns)
         function populateDropdown(dropdownId, items, clickHandler) {
             const dropdown = document.getElementById(dropdownId);
             if (!dropdown) {
-                console.warn(`Dropdown with ID "${dropdownId}" not found.`);
+                console.warn(`[populateDropdown] Dropdown with ID "${dropdownId}" not found.`);
                 return;
             }
             dropdown.innerHTML = ''; // Clear previous items
@@ -938,12 +637,21 @@
             document.getElementById(dropdownId).classList.remove('show');
         }
 
+        // Function to clear the parts table
+        function clearPartsTable() {
+            document.getElementById('partsTableHead').innerHTML = '';
+            document.getElementById('partsTableBody').innerHTML = '';
+            partsTableContainer.style.display = 'none';
+        }
+
         // Generates the parts table for 'Manufacture' mode based on BOM and Processes sheets
         // This is for generating the initial table structure
         function generatePartsTable(itemName) {
+            console.log(`[generatePartsTable] Generating table for item: ${itemName}`);
             const bomItemParts = allBomData.filter(item => item['Item Name'] === itemName); 
             
             if (bomItemParts.length === 0) {
+                console.log(`[generatePartsTable] No BOM data found for item: ${itemName}`);
                 document.getElementById('partsTableHead').innerHTML = '';
                 document.getElementById('partsTableBody').innerHTML = '';
                 partsTableContainer.style.display = 'none';
@@ -969,6 +677,8 @@
             });
 
             allProcessesForThisItem.sort(); // Sort processes alphabetically for consistent column order
+            console.log(`[generatePartsTable] Processes for item ${itemName}:`, allProcessesForThisItem);
+
 
             // Build the table header row
             let headerHTML = '<tr><th>Part Name</th>';
@@ -1006,14 +716,6 @@
             partsTableContainer.style.display = 'block'; // Show the parts table container
         }
 
-
-        // Function to clear the parts table
-        function clearPartsTable() {
-            document.getElementById('partsTableHead').innerHTML = '';
-            document.getElementById('partsTableBody').innerHTML = '';
-            partsTableContainer.style.display = 'none';
-        }
-
         // Adds a new row to the parts table for manual entry (used in Ready-Made)
         function addManualPart() {
             const tableBody = document.getElementById('partsTableBody');
@@ -1029,13 +731,12 @@
             });
         }
 
-
         // Loads ongoing work orders into the dropdown from Google Sheet data
         async function loadOngoingWorkOrders() {
-            console.log('Loading ongoing work orders...'); // Debugging log
+            console.log('[loadOngoingWorkOrders] Loading ongoing work orders...'); // Debugging log
             // Get all work orders from the main sheet
             const allWorkOrderEntries = await fetchList('mainSheetData'); // Fetch all data from the main sheet
-            console.log('Fetched mainSheetData for WOs:', allWorkOrderEntries); // Debugging log
+            console.log('[loadOngoingWorkOrders] Fetched mainSheetData for WOs:', allWorkOrderEntries); // Debugging log
 
             // Extract unique work orders from manufacture mode
             const uniqueOngoingWorkOrders = [...new Set(allWorkOrderEntries
@@ -1049,13 +750,13 @@
                 optionsHTML += `<option value="${order}">${order}</option>`;
             });
             workOrder.innerHTML = optionsHTML;
-            console.log('Work Orders populated:', uniqueOngoingWorkOrders); // Debugging log
+            console.log('[loadOngoingWorkOrders] Work Orders populated:', uniqueOngoingWorkOrders); // Debugging log
         }
 
         // Function to fetch and populate work order data for 'Ongoing' operations
         async function fetchAndPopulateWorkOrderData(workOrderId) {
             if (!workOrderId) return;
-            console.log('Fetching and populating data for work order:', workOrderId); // Debugging log
+            console.log('[fetchAndPopulateWorkOrderData] Fetching and populating data for work order:', workOrderId); // Debugging log
 
             loadingSpinner.style.display = 'block'; // Show spinner
             try {
@@ -1067,13 +768,14 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`); // More detailed error
+                    const errorText = await response.text(); // Get raw error text from response
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}. Response: ${errorText}`); // More detailed error
                 }
                 const result = await response.json();
 
                 if (result.result === 'success' && result.data) {
                     const fetchedRows = result.data;
-                    console.log("Fetched data for WO:", fetchedRows);
+                    console.log("[fetchAndPopulateWorkOrderData] Fetched data for WO:", fetchedRows);
 
                     // Re-aggregate quantities by part and process, summing up OUT and IN
                     // Structure: { "PartName": { "ProcessName": { "out": totalOUT, "in": totalIN }, ... } }
@@ -1096,7 +798,7 @@
                             aggregatedQuantities[partName][partProcess].in += inQty;
                         }
                     });
-                    console.log("Aggregated Quantities:", aggregatedQuantities); // Debugging log
+                    console.log("[fetchAndPopulateWorkOrderData] Aggregated Quantities:", aggregatedQuantities); // Debugging log
 
                     // Clear and regenerate the parts table structure based on the Item Name associated with this WO
                     const itemForWO = fetchedRows.find(row => row.item)?.item;
@@ -1140,12 +842,12 @@
                     });
 
                 } else {
-                    console.error('Error fetching work order data:', result.error);
+                    console.error('[fetchAndPopulateWorkOrderData] Error fetching work order data:', result.error);
                     alert('Error fetching work order data: ' + result.error);
                 }
 
             } catch (error) {
-                console.error('Failed to fetch work order data:', error);
+                console.error('[fetchAndPopulateWorkOrderData] Failed to fetch work order data:', error);
                 alert('Failed to fetch work order data. Check console for details.');
             } finally {
                 loadingSpinner.style.display = 'none'; // Hide spinner
