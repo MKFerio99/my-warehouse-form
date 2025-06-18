@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse Entry Form</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Body Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Container for the entire form */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* Header Styling */
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+
+        /* Form Container Padding */
+        .form-container {
+            padding: 40px;
+        }
+
+        /* Button Group Layout */
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        /* Base Button Styles */
+        .btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Button Hover Effect (shine) */
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        /* Primary Button (Not used for Manufacture/Ready-Made anymore, but kept for potential future use or if other buttons still use it) */
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+        }
+
+        /* Secondary Button (Used for Manufacture/Ready-Made and all operations) */
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #34495e;
+            border: 2px solid #bdc3c7;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #d5dbdb;
+            transform: translateY(-2px);
+        }
+
+        /* Active State for Secondary Buttons (Green border/background) */
+        .btn-secondary.active {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            border-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(39, 174, 96, 0.3);
+        }
+
+        /* Disabled Button Style */
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Form Group Spacing */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        /* Form Row for side-by-side inputs */
+        .form-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* Form Column for individual inputs */
+        .form-col {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .form-col.small {
+            flex: 0 0 150px;
+        }
+
+        /* Label Styling */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        /* Input Container for dropdowns */
+        .input-container {
+            position: relative;
+        }
+
+        /* Input and Select Field Styles */
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            transform: translateY(-1px);
+        }
+
+        input:disabled, select:disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        /* Dropdown Specific Styles */
+        .dropdown-container {
+            position: relative;
+        }
+
+        .dropdown-input {
+            cursor: pointer;
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e1e8ed;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-list.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .dropdown-item:hover {
+            background: #f8f9fa;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Parts Table Styling */
+        .parts-table-container {
+            margin-top: 30px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #e1e8ed;
+        }
+
+        .parts-table {
+            width: 100%; /* Ensure table takes full width of its scrollable container */
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .parts-table th,
+        .parts-table td {
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            min-width: 120px; /* Add minimum width to ensure columns push table wider */
+        }
+
+        .parts-table th {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            color: white;
+            z-index: 1; /* Default z-index for non-sticky headers */
+        }
+        .parts-table th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 3; /* High z-index to stay above scrolling content and other headers */
+            background: linear-gradient(135deg, #34495e, #2c3e50); /* Re-apply header background for sticky element */
+            border-right: 1px solid #e1e8ed; /* Add border to separate sticky column */
+            min-width: 150px; /* Ensure Part Name column is wide enough */
+        }
+
+        .parts-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .parts-table td:first-child {
+            position: sticky;
+            left: 0;
+            background: white; /* Ensure body cell background is white */
+            z-index: 2; /* Ensure it stays above scrolling content */
+            border-right: 1px solid #e1e8ed; /* Add border to separate sticky column */
+            min-width: 150px; /* Ensure Part Name column is wide enough */
+        }
+
+        .parts-table input {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            position: relative; /* Needed for sticky positioning context */
+        }
+
+        /* Add Part Button */
+        .add-part-btn {
+            margin-top: 15px;
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .add-part-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+        }
+
+        /* Reset Button */
+        .reset-btn {
+            width: 100%;
+            padding: 20px;
+            background: #95a5a6; /* Grey background */
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px; /* Spacing from submit button */
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #7f8c8d; /* Darker grey on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(149, 165, 166, 0.3);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .form-col {
+                min-width: auto;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                min-width: auto;
+            }
+
+            .parts-table th,
+            .parts-table td {
+                padding: 8px 4px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Utility Class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Work Order Display for Auto-generated */
+        .work-order-display {
+            background: #e8f5e8;
+            border: 2px solid #27ae60;
+            color: #27ae60;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Warehouse Entry Portal</h1>
+            <p>Streamlined IN/OUT Operations Management</p>
+        </div>
+
+        <div class="form-container">
+            <form id="warehouseForm">
+                <!-- Manufacture/Ready-Made Selection -->
+                <div class="form-group">
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" id="manufactureBtn">Manufacture</button>
+                        <button type="button" class="btn btn-secondary" id="readyMadeBtn">Ready-Made</button>
+                    </div>
+                </div>
+
+                <!-- Operations (New/Ongoing/IN/OUT) -->
+                <div class="form-group" id="operationGroup">
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" id="newBtn" disabled>New</button>
+                        <button type="button" class="btn btn-secondary" id="ongoingBtn" disabled>Ongoing</button>
+                        <button type="button" class="btn btn-secondary" id="inBtn" disabled>IN</button>
+                        <button type="button" class="btn btn-secondary" id="outBtn" disabled>OUT</button>
+                    </div>
+                </div>
+
+                <!-- Vendor Selection -->
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="vendorName">Vendor Name</label>
+                            <div class="dropdown-container">
+                                <input type="text" id="vendorName" class="dropdown-input" placeholder="Type to search vendors...">
+                                <div class="dropdown-list" id="vendorDropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <label for="processName">Process Name</label>
+                            <div class="dropdown-container">
+                                <input type="text" id="processName" class="dropdown-input" placeholder="Type to search processes...">
+                                <div class="dropdown-list" id="processDropdown"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Work Order -->
+                <div class="form-group">
+                    <label for="workOrder">Work Order</label>
+                    <select id="workOrder">
+                        <option value="">Select Work Order</option>
+                    </select>
+                </div>
+
+                <!-- Item Selection -->
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="itemName">Item Name</label>
+                            <div class="dropdown-container">
+                                <input type="text" id="itemName" class="dropdown-input" placeholder="Type to search items...">
+                                <div class="dropdown-list" id="itemDropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-col small">
+                            <label for="quantity">Quantity</label>
+                            <input type="number" id="quantity" min="1" placeholder="Qty">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parts Table -->
+                <div class="parts-table-container" id="partsTableContainer" style="display: none;">
+                    <div class="table-scroll">
+                        <table class="parts-table" id="partsTable">
+                            <thead id="partsTableHead"></thead>
+                            <tbody id="partsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="add-part-btn" id="addPartBtn">+ Add Part</button>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="submit-btn">Submit Entry</button>
+                <!-- Reset Button -->
+                <button type="button" class="reset-btn" id="resetBtn">Reset</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- IMPORTANT: DEFINE YOUR APPS SCRIPT WEB APP URL ---
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycby7tnJSLDWG2f_yzhAymFpMl2gtv-lNP3q8YsrOSGmx7ctDnw3syWnxt4q6WTSLrJ1g/exec'; // REPLACE with your actual URL
+
+        // State variables to keep track of current selections and form mode
+        let currentMode = null; // 'manufacture' or 'ready-made'
+        let selectedNewOngoingOp = null; // 'new' or 'ongoing'
+        let selectedInOutOp = null; // 'in' or 'out'
+        let selectedVendor = null;
+        let selectedProcess = null;
+        let selectedItem = null;
+
+        // Global variables to store fetched data from Google Sheets
+        let allVendorProcessData = [];
+        let allBomData = [];
+        let allProcessMappingData = [];
+
+        // DOM element references for easier access
+        const manufactureBtn = document.getElementById('manufactureBtn');
+        const readyMadeBtn = document.getElementById('readyMadeBtn');
+        const newBtn = document.getElementById('newBtn');
+        const ongoingBtn = document.getElementById('ongoingBtn');
+        const inBtn = document.getElementById('inBtn');
+        const outBtn = document.getElementById('outBtn');
+        const vendorName = document.getElementById('vendorName');
+        const processName = document.getElementById('processName');
+        const workOrder = document.getElementById('workOrder');
+        const itemName = document.getElementById('itemName');
+        const quantity = document.getElementById('quantity');
+        const partsTableContainer = document.getElementById('partsTableContainer');
+        const addPartBtn = document.getElementById('addPartBtn');
+        const resetBtn = document.getElementById('resetBtn'); // Reference to the new reset button
+
+        // Initialize the form when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', async function() { // Added async here
+            // Fetch data from Google Sheets first
+            allVendorProcessData = await fetchList('vendors');
+            allBomData = await fetchList('bom');
+            allProcessMappingData = await fetchList('processes');
+
+            setupEventListeners();
+            setupDropdowns();
+            resetForm(); // Call resetForm to set initial state of the form
+
+            // Initial population of dropdowns using fetched data
+            const uniqueVendorNames = [...new Set(allVendorProcessData.map(item => item.vendorName))];
+            populateDropdown('vendorDropdown', uniqueVendorNames, handleVendorSelect);
+
+            const uniqueItemNames = [...new Set(allBomData.map(item => item['Item Name']))];
+            populateDropdown('itemDropdown', uniqueItemNames, handleItemSelect);
+
+            populateDropdown('processDropdown', [], handleProcessSelect); // Initially empty, populated by vendor selection
+        });
+
+        // Setup all event listeners for buttons and input fields
+        function setupEventListeners() {
+            // Event listeners for mode selection buttons
+            manufactureBtn.addEventListener('click', () => selectMode('manufacture'));
+            readyMadeBtn.addEventListener('click', () => selectMode('ready-made'));
+            
+            // Event listeners for operation selection buttons
+            newBtn.addEventListener('click', () => selectNewOngoingOperation('new'));
+            ongoingBtn.addEventListener('click', () => selectNewOngoingOperation('ongoing'));
+            inBtn.addEventListener('click', () => selectInOutOperation('in'));
+            outBtn.addEventListener('click', () => selectInOutOperation('out'));
+
+            // Event listeners for item name input for dropdown functionality
+            itemName.addEventListener('input', handleItemInput);
+            // Hide dropdown after a short delay on blur to allow click on dropdown item
+            itemName.addEventListener('blur', () => setTimeout(() => hideDropdown('itemDropdown'), 200));
+
+            // Event listener for the form submission
+            document.getElementById('warehouseForm').addEventListener('submit', handleSubmit);
+            // Event listener for adding a manual part row to the table
+            addPartBtn.addEventListener('click', addManualPart);
+            // Event listener for the new reset button
+            resetBtn.addEventListener('click', resetForm);
+        }
+
+        // Handles selection of 'Manufacture' or 'Ready-Made' mode
+        function selectMode(mode) {
+            currentMode = mode; // Set the current mode
+            
+            // Update active state for mode buttons (mutually exclusive)
+            manufactureBtn.classList.remove('active');
+            readyMadeBtn.classList.remove('active');
+            if (mode === 'manufacture') {
+                manufactureBtn.classList.add('active');
+            } else { // 'ready-made'
+                readyMadeBtn.classList.add('active');
+            }
+            
+            // Reset most form fields while keeping the selected mode highlighted
+            resetForm(true); 
+            // Update the enabled/disabled state and default active state of operation buttons based on the new mode
+            updateOperationButtons(); 
+
+            // After updating button states, set default operations if applicable
+            if (currentMode === 'manufacture') {
+                // No default selection for Manufacture; user must choose New, Ongoing, IN, or OUT
+                // clear any active state if user switched from Ready-Made (where New is default)
+                selectedNewOngoingOp = null; 
+                selectedInOutOp = null;
+            } else if (currentMode === 'ready-made') {
+                // For Ready-Made, 'New' is always the default 'type' operation.
+                selectNewOngoingOperation('new'); 
+                // No default IN/OUT for Ready-Made, user has to choose.
+                selectedInOutOp = null;
+            }
+        }
+
+        // Handles selection within the 'New' / 'Ongoing' group
+        function selectNewOngoingOperation(operation) {
+            if (newBtn.disabled && ongoingBtn.disabled) return; // Prevent selection if disabled
+
+            newBtn.classList.remove('active');
+            ongoingBtn.classList.remove('active');
+
+            if (operation === 'new') {
+                newBtn.classList.add('active');
+                selectedNewOngoingOp = 'new';
+            } else if (operation === 'ongoing') {
+                ongoingBtn.classList.add('active');
+                selectedNewOngoingOp = 'ongoing';
+            }
+
+            // Adjust form fields based on the selected New/Ongoing operation within Manufacture mode
+            handleOperationSpecificFields();
+        }
+
+        // Handles selection within the 'IN' / 'OUT' group
+        function selectInOutOperation(operation) {
+            // IN/OUT buttons are always enabled, so no need for `disabled` check here.
+            inBtn.classList.remove('active');
+            outBtn.classList.remove('active');
+
+            if (operation === 'in') {
+                inBtn.classList.add('active');
+                selectedInOutOp = 'in';
+            } else if (operation === 'out') {
+                outBtn.classList.add('active');
+                selectedInOutOp = 'out';
+            }
+
+            // Adjust form fields based on the selected IN/OUT operation and current mode
+            handleOperationSpecificFields();
+        }
+
+        // Central function to handle logic for fields that change based on combined operations and mode
+        function handleOperationSpecificFields() {
+            let autoGenerateWorkOrder = true;
+            let workOrderText = '';
+            let workOrderReadOnly = true;
+            let enableQuantity = false;
+            let processReadOnly = false;
+            
+            // Always clear item and parts table related display for fresh selection
+            itemName.value = '';
+            selectedItem = null;
+            partsTableContainer.style.display = 'none';
+            document.getElementById('partsTableHead').innerHTML = '';
+            document.getElementById('partsTableBody').innerHTML = '';
+            addPartBtn.style.display = 'none';
+
+            if (currentMode === 'manufacture') {
+                enableQuantity = false; // Quantity disabled for Manufacture
+                processReadOnly = false; // Process editable for Manufacture
+                quantity.disabled = true; // Ensure disabled state
+
+                if (selectedNewOngoingOp === 'new') {
+                    workOrderText = 'WO-' + Date.now();
+                    processName.value = 'TURNING'; // Auto-fill for New Manufacture
+                    selectedProcess = 'TURNING';
+                    filterVendorsByProcess('TURNING');
+                } else if (selectedNewOngoingOp === 'ongoing') {
+                    autoGenerateWorkOrder = false; // Work order selected from list
+                    loadOngoingWorkOrders();
+                    workOrderReadOnly = false;
+                } else { // If neither New nor Ongoing is explicitly selected, for example, just IN/OUT is picked
+                    workOrderText = 'WO-' + Date.now();
+                }
+
+                // If an item was previously selected, or if user selects it now, parts table will show
+                // The visibility of parts table for Manufacture is handled by handleItemSelect
+                
+            } else if (currentMode === 'ready-made') {
+                enableQuantity = true; // Quantity enabled for Ready-Made
+                quantity.disabled = false; // Ensure enabled state
+
+                processName.value = ''; // Clear and disable process for Ready-Made
+                selectedProcess = null;
+                vendorName.value = '';
+                selectedVendor = null;
+                processName.disabled = true; // Ensure disabled state
+
+                partsTableContainer.style.display = 'block'; // Show parts table for manual entry
+                document.getElementById('partsTableHead').innerHTML = '<tr><th>Part Name</th><th>Quantity</th></tr>';
+                addPartBtn.style.display = 'block'; // Show Add Part button
+
+                workOrderText = 'RM-WO-' + Date.now(); // Always generate new WO for Ready-Made
+            }
+
+            // Apply work order settings
+            if (autoGenerateWorkOrder) {
+                workOrder.innerHTML = `<option value="${workOrderText}" selected>${workOrderText}</option>`;
+                workOrder.classList.add('work-order-display');
+                workOrder.disabled = workOrderReadOnly;
+            } else {
+                workOrder.innerHTML = '<option value="">Select Work Order</option>';
+                workOrder.classList.remove('work-order-display');
+                workOrder.disabled = workOrderReadOnly;
+            }
+        }
+
+
+        // Setup dropdown event listeners
+        function setupDropdowns() {
+            setupVendorDropdown();
+            setupProcessDropdown();
+            setupItemDropdown();
+        }
+
+        // Setup specific event listeners for the vendor dropdown
+        function setupVendorDropdown() {
+            vendorName.addEventListener('input', handleVendorInput);
+            vendorName.addEventListener('focus', () => showVendorDropdown());
+            vendorName.addEventListener('blur', () => setTimeout(() => hideDropdown('vendorDropdown'), 200));
+        }
+
+        // Setup specific event listeners for the process dropdown
+        function setupProcessDropdown() {
+            processName.addEventListener('input', handleProcessInput);
+            processName.addEventListener('focus', () => showProcessDropdown());
+            processName.addEventListener('blur', () => setTimeout(() => hideDropdown('processDropdown'), 200));
+        }
+
+        // Setup specific event listeners for the item dropdown
+        function setupItemDropdown() {
+            itemName.addEventListener('input', handleItemInput);
+            itemName.addEventListener('focus', () => showItemDropdown());
+            itemName.addEventListener('blur', () => setTimeout(() => hideDropdown('itemDropdown'), 200));
+        }
+
+        // Handle input change for vendor name to filter dropdown
+        function handleVendorInput() {
+            const query = vendorName.value.toLowerCase();
+            let vendors = [...new Set(allVendorProcessData.map(item => item.vendorName))]; // Use fetched data
+            
+            // If a process is already selected, filter vendors by that process
+            if (selectedProcess) {
+                vendors = allVendorProcessData
+                    .filter(item => item.processName === selectedProcess)
+                    .map(item => item.vendorName);
+            }
+            
+            const filtered = vendors.filter(vendor => 
+                vendor.toLowerCase().includes(query)
+            );
+            populateDropdown('vendorDropdown', filtered, handleVendorSelect); // Populate and show
+            showDropdown('vendorDropdown');
+        }
+
+        // Handle input change for process name to filter dropdown
+        function handleProcessInput() {
+            const query = processName.value.toLowerCase();
+            let processes = [...new Set(allVendorProcessData.map(item => item.processName))]; // Use fetched data
+            
+            // If a vendor is already selected, filter processes by that vendor
+            if (selectedVendor) {
+                processes = allVendorProcessData
+                    .filter(item => item.vendorName === selectedVendor)
+                    .map(item => item.processName);
+            }
+            
+            const filtered = processes.filter(process => 
+                process.toLowerCase().includes(query)
+            );
+            populateDropdown('processDropdown', filtered, handleProcessSelect); // Populate and show
+            showDropdown('processDropdown');
+        }
+
+        // Handle input change for item name to filter dropdown
+        function handleItemInput() {
+            const query = itemName.value.toLowerCase();
+            const items = [...new Set(allBomData.map(item => item['Item Name']))]; // Use fetched data
+            const filtered = items.filter(item => 
+                item.toLowerCase().includes(query)
+            );
+            populateDropdown('itemDropdown', filtered, handleItemSelect); // Populate and show
+            showDropdown('itemDropdown');
+        }
+
+        // Handle selection of a vendor from the dropdown	
+        function handleVendorSelect(vendor) {
+            selectedVendor = vendor; // Set the selected vendor
+            vendorName.value = vendor; // Update input field
+            hideDropdown('vendorDropdown'); // Hide dropdown
+            
+            // After vendor selection, filter available processes based on this vendor
+            const processes = allVendorProcessData // Use fetched data
+                .filter(item => item.vendorName === vendor)
+                .map(item => item.processName);
+            // If only one process is available for this vendor and no process is selected yet, auto-select it
+            if (processes.length === 1 && !selectedProcess) {
+                selectedProcess = processes[0];
+                processName.value = processes[0];
+            }
+            // Ensure process dropdown reflects current vendor's processes
+            filterProcessesByVendor(vendor);
+        }
+
+        // Handle selection of a process from the dropdown
+        function handleProcessSelect(process) {
+            selectedProcess = process; // Set the selected process
+            processName.value = process; // Update input field
+            hideDropdown('processDropdown'); // Hide dropdown
+            
+            // After process selection, filter available vendors based on this process
+            filterVendorsByProcess(process);
+        }
+
+        // Handle selection of an item from the dropdown
+        function handleItemSelect(item) {
+            selectedItem = item; // Set the selected item
+            itemName.value = item; // Update input field
+            hideDropdown('itemDropdown'); // Hide dropdown
+
+            // Generate parts table based on mode and operation
+            // For Manufacture (New/Ongoing/IN/OUT), parts are auto-generated from BOM and processes
+            if (currentMode === 'manufacture') {
+                generatePartsTable(item); 
+                addPartBtn.style.display = 'none'; // Hide manual add part button for Manufacture
+            } 
+            // For Ready-Made, parts are manually added
+            else if (currentMode === 'ready-made') {
+                document.getElementById('partsTableHead').innerHTML = '<tr><th>Part Name</th><th>Quantity</th></tr>';
+                document.getElementById('partsTableBody').innerHTML = ''; // Clear any existing rows
+                partsTableContainer.style.display = 'block'; // Show table container
+                addPartBtn.style.display = 'block'; // Show manual add part button
+            }
+        }
+
+        // Filter vendor dropdown items based on selected process
+        function filterVendorsByProcess(process) {
+            const vendors = allVendorProcessData // Use fetched data
+                .filter(item => item.processName === process)
+                .map(item => item.vendorName);
+            // If a vendor is currently selected but doesn't offer this process, clear the vendor selection
+            if (selectedVendor && !vendors.includes(selectedVendor)) {
+                vendorName.value = '';
+                selectedVendor = null;
+            }
+        }
+
+        // Filter process dropdown items based on selected vendor
+        function filterProcessesByVendor(vendor) {
+            const processes = allVendorProcessData // Use fetched data
+                .filter(item => item.vendorName === vendor)
+                .map(item => item.processName);
+            // If a process is currently selected but is not offered by this vendor, clear the process selection
+            if (selectedProcess && !processes.includes(selectedProcess)) {
+                processName.value = '';
+                selectedProcess = null;
+            }
+        }
+
+        // Populates a generic dropdown list (for custom input-based dropdowns)
+        function populateDropdown(dropdownId, items, clickHandler) {
+            const dropdown = document.getElementById(dropdownId);
+            if (!dropdown) {
+                console.warn(`Dropdown with ID "${dropdownId}" not found.`);
+                return;
+            }
+            dropdown.innerHTML = ''; // Clear previous items
+            
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'dropdown-item';
+                div.textContent = item;
+                // Use 'mousedown' to prevent 'blur' event from firing immediately and closing dropdown
+                div.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); 
+                    clickHandler(item);
+                });
+                dropdown.appendChild(div);
+            });
+        }
+
+        // Shows a dropdown list
+        function showDropdown(dropdownId) {
+            document.getElementById(dropdownId).classList.add('show');
+        }
+
+        // Hides a dropdown list
+        function hideDropdown(dropdownId) {
+            document.getElementById(dropdownId).classList.remove('show');
+        }
+
+        // Shows the vendor dropdown with filtered options
+        function showVendorDropdown() {
+            let vendors = [...new Set(allVendorProcessData.map(item => item.vendorName))]; // Use fetched data
+            if (selectedProcess) { // Filter by currently selected process if any
+                vendors = allVendorProcessData
+                    .filter(item => item.processName === selectedProcess)
+                    .map(item => item.vendorName);
+            }
+            
+            populateDropdown('vendorDropdown', vendors, handleVendorSelect);
+            showDropdown('vendorDropdown');
+        }
+
+        // Shows the item dropdown with all available items
+        function showItemDropdown() {
+            const items = [...new Set(allBomData.map(item => item['Item Name']))]; // Use fetched data
+            populateDropdown('itemDropdown', items, handleItemSelect);
+            showDropdown('itemDropdown');
+        }
+
+        // Shows the process dropdown with filtered options
+        function showProcessDropdown() {
+            let processes = [...new Set(allVendorProcessData.map(item => item.processName))]; // Use fetched data
+            if (selectedVendor) { // Filter by currently selected vendor if any
+                processes = allVendorProcessData
+                    .filter(item => item.vendorName === selectedVendor)
+                    .map(item => item.processName);
+            }
+            
+            populateDropdown('processDropdown', processes, handleProcessSelect);
+            showDropdown('processDropdown');
+        }
+
+        // Generates the parts table for 'Manufacture' mode
+        function generatePartsTable(itemName) {
+            const bomItemParts = allBomData.filter(item => item['Item Name'] === itemName); // Use allBomData
+            
+            if (bomItemParts.length === 0) {
+                document.getElementById('partsTableHead').innerHTML = '';
+                document.getElementById('partsTableBody').innerHTML = '';
+                partsTableContainer.style.display = 'none';
+                return; // Exit if item not found in BOM
+            }
+
+            // Get unique parts for the selected item
+            const parts = [...new Set(bomItemParts.map(item => item['Part Name']))]; 
+
+            const tableHead = document.getElementById('partsTableHead');
+            const tableBody = document.getElementById('partsTableBody');
+
+            // Collect all unique processes involved for the parts of this item from allProcessMappingData
+            const allProcesses = [];
+            parts.forEach(part => {
+                const processesForPart = allProcessMappingData
+                    .filter(p => p.itemName === itemName && p.partName === part)
+                    .map(p => p.processName);
+                processesForPart.forEach(process => {
+                    if (!allProcesses.includes(process)) {
+                        allProcesses.push(process);
+                    }
+                });
+            });
+
+            // Sort processes alphabetically for consistent column order
+            allProcesses.sort();
+
+            // Build the table header row
+            let headerHTML = '<tr><th>Part Name</th>';
+            allProcesses.forEach(process => {
+                headerHTML += `<th>${process}<br><small>OUT | IN</small></th>`;
+            });
+            headerHTML += '<th>Action</th></tr>'; // Added Action column to header
+            tableHead.innerHTML = headerHTML;
+
+            // Build the table body rows
+            let bodyHTML = '';
+            parts.forEach(part => {
+                let rowHTML = `<tr><td><strong>${part}</strong></td>`;
+
+                // Add cells for each process, with input fields if the part requires that process
+                allProcesses.forEach(process => {
+                    const partDataExists = allProcessMappingData.some(
+                        p => p.itemName === itemName && p.partName === part && p.processName === process
+                    );
+                    if (partDataExists) {
+                        rowHTML += `<td>
+                            <input type="number" placeholder="OUT" min="0" value="0"> | 
+                            <input type="number" placeholder="IN" min="0" value="0">
+                        </td>`;
+                    } else {
+                        rowHTML += '<td>-</td>'; // Display '-' if part doesn't go through this process
+                    }
+                });
+
+                rowHTML += `<td><button type="button" class="btn btn-secondary delete-part-btn">Delete</button></td></tr>`; // Added delete button
+                bodyHTML += rowHTML;
+            });
+            tableBody.innerHTML = bodyHTML; // Populate table body
+            partsTableContainer.style.display = 'block'; // Show the parts table container
+
+            // Add event listeners for new delete buttons
+            document.querySelectorAll('.delete-part-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.target.closest('tr').remove();
+                });
+            });
+        }
+
+        // Adds a new row to the parts table for manual entry (used in Ready-Made)
+        function addManualPart() {
+            const tableBody = document.getElementById('partsTableBody');
+            const tableHead = document.getElementById('partsTableHead');
+
+            let rowHTML = '<tr><td><input type="text" placeholder="Enter part name" style="width: 120px;"></td>';
+
+            // Manual parts are only for Ready-Made mode, so only quantity column
+            if (currentMode === 'ready-made') {
+                rowHTML += `<td><input type="number" placeholder="Qty" min="0"></td>`;
+            }
+
+            rowHTML += `<td><button type="button" class="btn btn-secondary delete-part-btn">Delete</button></td></tr>`; // Added delete button
+
+            tableBody.insertAdjacentHTML('beforeend', rowHTML); // Add row to the end of the table body
+
+            // Add event listener for the new delete button
+            tableBody.lastElementChild.querySelector('.delete-part-btn').addEventListener('click', (e) => {
+                e.target.closest('tr').remove();
+            });
+        }
+
+
+        // Loads ongoing work orders into the dropdown (will fetch from sheets if you have a WO sheet)
+        async function loadOngoingWorkOrders() {
+            // TODO: Replace this mock data with a fetch from your Google Sheet if you have a "Work Orders" sheet
+            // Example: const ongoingOrders = await fetchList('workOrders'); 
+            const ongoingOrders = [
+                'WO-2024-001',
+                'WO-2024-002',
+                'WO-2024-003',
+                'WO-2024-004'
+            ];
+            let optionsHTML = '<option value="">Select Work Order</option>';
+            ongoingOrders.forEach(order => {
+                optionsHTML += `<option value="${order}">${order}</option>`;
+            });
+            workOrder.innerHTML = optionsHTML;
+        }
+
+        // Updates the enabled/disabled state and active class of operation buttons based on the current mode
+        function updateOperationButtons() {
+            // Always enable IN and OUT buttons as per the latest instruction
+            inBtn.disabled = false;
+            outBtn.disabled = false;
+
+            // Remove active classes from ALL operation buttons to ensure a clean slate
+            newBtn.classList.remove('active');
+            ongoingBtn.classList.remove('active');
+            inBtn.classList.remove('active');
+            outBtn.classList.remove('active');
+
+            // Disable New and Ongoing by default, then enable based on mode
+            newBtn.disabled = true;
+            ongoingBtn.disabled = true;
+
+            // Set quantity field disabled by default, will be re-enabled for Ready-Made
+            quantity.disabled = true; 
+
+            // Handle enablement based on currentMode
+            if (currentMode === 'manufacture') {
+                newBtn.disabled = false;     // Enable New
+                ongoingBtn.disabled = false; // Enable Ongoing
+            } else if (currentMode === 'ready-made') {
+                newBtn.disabled = true;      // Disable New for Ready-Made (as it's auto-selected, not a choice here)
+                ongoingBtn.disabled = true;  // Disable Ongoing for Ready-Made
+                
+                quantity.disabled = false;   // Enable Quantity for Ready-Made ops
+            } else { // Initial state / no mode selected
+                // All operation buttons already disabled
+            }
+        }
+
+        // Resets the entire form to its initial state
+        // 'keepMode' parameter (boolean) indicates if the Manufacture/Ready-Made mode should remain selected
+        function resetForm(keepMode = false) {
+            // If not keeping the mode, remove active class from mode buttons and reset currentMode
+            if (!keepMode) { 
+                manufactureBtn.classList.remove('active');
+                readyMadeBtn.classList.remove('active');
+                currentMode = null;
+            }
+
+            // Reset all input fields and dropdowns to default values
+            vendorName.value = '';
+            processName.value = '';
+            itemName.value = '';
+            quantity.value = '';
+            workOrder.innerHTML = '<option value="">Select Work Order</option>'; // Reset work order dropdown
+            workOrder.classList.remove('work-order-display'); // Remove auto-generated work order style
+            workOrder.disabled = false; // Ensure work order dropdown is enabled
+            processName.disabled = false; // Ensure process input is enabled on reset
+            
+            // Reset all state variables
+            selectedVendor = null;
+            selectedProcess = null;
+            selectedItem = null;
+            selectedNewOngoingOp = null; // Clear new/ongoing selection
+            selectedInOutOp = null; // Clear in/out selection
+            
+            // Hide the parts table and clear its content
+            partsTableContainer.style.display = 'none';
+            document.getElementById('partsTableHead').innerHTML = '';
+            document.getElementById('partsTableBody').innerHTML = '';
+            addPartBtn.style.display = 'none'; // Hide 'Add Part' button
+
+            // Update operation button states (disable all if no mode is selected, or enable relevant ones if mode is kept)
+            updateOperationButtons();
+        }
+
+        // --- Functions to FETCH LISTS from Google Sheet via Apps Script ---
+
+        // Generic function to fetch any list (vendors, processes, bom)
+        async function fetchList(listType, additionalParams = {}) {
+            try {
+                // Build the URL with query parameters (e.g., ?listType=vendors&itemName=X)
+                const params = new URLSearchParams({ listType, ...additionalParams }).toString();
+                // Ensure webAppUrl is defined globally or passed correctly
+                const url = `${webAppUrl}?${params}`; 
+
+                const response = await fetch(url);
+                // Apps Script doGet returns JSON, so we parse it
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error(`Error fetching ${listType}:`, data.error);
+                    return []; // Return empty array on error
+                }
+                return data; // This will be the array of list items
+            } catch (error) {
+                console.error(`Network or parsing error for ${listType}:`, error);
+                return []; // Return empty array on error
+            }
+        }
+
+        // Populates a generic dropdown list (for custom input-based dropdowns)
+        function populateDropdown(dropdownId, items, clickHandler) {
+            const dropdown = document.getElementById(dropdownId);
+            if (!dropdown) {
+                console.warn(`Dropdown with ID "${dropdownId}" not found.`);
+                return;
+            }
+            dropdown.innerHTML = ''; // Clear previous items
+            
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'dropdown-item';
+                div.textContent = item;
+                // Use 'mousedown' to prevent 'blur' event from firing immediately and closing dropdown
+                div.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); 
+                    clickHandler(item);
+                });
+                dropdown.appendChild(div);
+            });
+        }
+
+        // Shows a dropdown list
+        function showDropdown(dropdownId) {
+            document.getElementById(dropdownId).classList.add('show');
+        }
+
+        // Hides a dropdown list
+        function hideDropdown(dropdownId) {
+            document.getElementById(dropdownId).classList.remove('show');
+        }
+
+        // Handles the form submission logic
+        async function handleSubmit(e) { // Changed to async here
+            e.preventDefault(); // Prevent default form submission behavior
+
+            // Determine the combined operation for form data
+            let finalOperation = null;
+            if (selectedNewOngoingOp && selectedInOutOp) {
+                 finalOperation = `${selectedNewOngoingOp}-${selectedInOutOp}`;
+            } else if (selectedNewOngoingOp) {
+                 finalOperation = selectedNewOngoingOp;
+            } else if (selectedInOutOp) {
+                 finalOperation = selectedInOutOp;
+            }
+            
+            // Collect all form data into an object
+            const formData = {
+                mode: currentMode,
+                operation: finalOperation, // Use the combined operation
+                vendor: selectedVendor,
+                process: selectedProcess,
+                workOrder: workOrder.value,
+                item: selectedItem,
+                quantity: quantity.value,
+                parts: []
+            };
+
+            // Collect data from the parts table
+            const partsRows = document.querySelectorAll('#partsTableBody tr');
+            partsRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const partNameInput = cells[0].querySelector('input');
+                const partName = partNameInput ? partNameInput.value : cells[0].textContent.trim(); // Get part name from input or text
+                
+                if (partName && partName !== '-') { // Only process if a valid part name exists
+                    const partData = { name: partName, processes: {} };
+                    
+                    // Logic to collect quantity for Ready-Made or Manufacture IN/OUT
+                    if (currentMode === 'ready-made') { // Only ready-made uses the overall item quantity field
+                        const qtyInput = cells[1].querySelector('input');
+                        if (qtyInput) {
+                            partData.quantity = qtyInput.value || 0;
+                        }
+                    } else if (currentMode === 'manufacture') {
+                        // Logic to collect IN/OUT quantities for Manufacture operations (New/Ongoing/IN/OUT)
+                        const headerThs = document.querySelectorAll('#partsTableHead th');
+                        for (let i = 1; i < cells.length -1 ; i++) { // Iterate through process columns, exclude last (Action)
+                            const inputs = cells[i].querySelectorAll('input');
+                            if (inputs.length === 2) {
+                                // Extract process name from header (e.g., "TURNING\nOUT | IN")
+                                const processHeader = headerThs[i].textContent;
+                                const processName = processHeader.split('\n')[0].trim(); // Get "TURNING"
+                                partData.processes[processName] = {
+                                    out: inputs[0].value || 0,
+                                    in: inputs[1].value || 0
+                                };
+                            }
+                        }
+                    }
+                    formData.parts.push(partData);
+                }
+            });
+
+            // --- Form Validation ---
+            if (!currentMode) {
+                alert('Please select Manufacture or Ready-Made');
+                return;
+            }
+            
+            // Validate that at least one operation is selected from either group
+            if (!selectedNewOngoingOp && !selectedInOutOp) {
+                alert('Please select an operation (New/Ongoing or IN/OUT)');
+                return;
+            }
+            // For Manufacture, require a New/Ongoing selection
+            if (currentMode === 'manufacture' && !selectedNewOngoingOp) {
+                alert('Please select either New or Ongoing operation for Manufacture mode.');
+                return;
+            }
+            // For Ready-Made, require an IN/OUT selection (New is default, but not a choice itself)
+            if (currentMode === 'ready-made' && !selectedInOutOp) {
+                alert('Please select either IN or OUT operation for Ready-Made mode.');
+                return;
+            }
+
+
+            if (!selectedVendor) {
+                alert('Please select a vendor');
+                return;
+            }
+            
+            // Process validation for Manufacture (all operations need a process)
+            // For Ready-Made, process is optional based on my understanding, or can be determined via BOM
+            if (currentMode === 'manufacture' && !selectedProcess) {
+                alert('Please select a process');
+                return;
+            }
+            
+            if (!workOrder.value) {
+                alert('Please select or generate a work order');
+                return;
+            }
+            
+            // Item validation
+            // For Manufacture (all operations), item selection is required to auto-generate parts
+            if (currentMode === 'manufacture' && !selectedItem) {
+                 alert('Please select an item');
+                 return;
+            }
+            // For Ready-Made, item is also required
+            if (currentMode === 'ready-made' && !selectedItem) {
+                alert('Please select an item');
+                return;
+            }
+            
+            // Quantity/Part validation based on mode/operation
+            if (currentMode === 'ready-made') {
+                if (!quantity.value && formData.parts.length === 0) {
+                    alert('Please enter quantity for the item or add parts manually.');
+                    return;
+                }
+            } 
+            else if (currentMode === 'manufacture') {
+                // For Manufacture, parts must be auto-generated or at least one part exists from BOM
+                if (selectedItem && formData.parts.length === 0) { 
+                    alert('Part details could not be generated for the selected item. Please select a valid item.');
+                    return;
+                } else if (!selectedItem && formData.parts.length === 0) { // If no item selected (should be caught by earlier validation)
+                    alert('Please select an item to generate parts.');
+                    return;
+                }
+            }
+            
+            // --- Send data to Google Apps Script using async/await ---
+            try {
+                const response = await fetch(webAppUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // Important for cross-origin requests
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                // For 'no-cors' mode, we usually just confirm the request was sent.
+                // The actual success/failure for appending to the sheet is handled by the Apps Script.
+                console.log('Form submission request sent to Google Apps Script.');
+                alert('Entry submitted successfully!');
+                resetForm(); // Reset the form after successful submission
+            } catch (error) {
+                console.error('Network or submission error:', error);
+                alert('Failed to submit entry. Please check your internet connection or console for errors.');
+            }
+        }
+    </script>
+</body>
+</html>
