@@ -576,12 +576,22 @@
 
         // Initialize the form when the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', async function() {
+            console.log('DOMContentLoaded fired'); // Debugging log
             loadingSpinner.style.display = 'block'; // Show spinner on load
             try {
+                console.log('webAppUrl:', webAppUrl); // Debugging log
                 // Fetch data from Google Sheets first
+                console.log('Fetching vendors...'); // Debugging log
                 allVendorProcessData = await fetchList('vendors');
+                console.log('Vendors fetched:', allVendorProcessData.length); // Debugging log
+
+                console.log('Fetching BOM...'); // Debugging log
                 allBomData = await fetchList('bom');
+                console.log('BOM fetched:', allBomData.length); // Debugging log
+
+                console.log('Fetching processes...'); // Debugging log
                 allProcessMappingData = await fetchList('processes');
+                console.log('Processes fetched:', allProcessMappingData.length); // Debugging log
 
                 setupEventListeners();
                 setupDropdowns();
@@ -979,7 +989,7 @@
                     );
                     const cell = row.insertCell();
                     if (partHasThisProcess) {
-                        cell.innerHTML = `<input type="number" placeholder="OUT" min="0" value="0"> | <input type="number" placeholder="IN" min="0" value="0">`;
+                        cell.innerHTML = `<input type="number" placeholder="OUT" class="out-qty" min="0" value="0"> | <input type="number" placeholder="IN" class="in-qty" min="0" value="0">`;
                     } else {
                         cell.textContent = '-'; // Not applicable
                     }
@@ -1022,8 +1032,10 @@
 
         // Loads ongoing work orders into the dropdown from Google Sheet data
         async function loadOngoingWorkOrders() {
+            console.log('Loading ongoing work orders...'); // Debugging log
             // Get all work orders from the main sheet
             const allWorkOrderEntries = await fetchList('mainSheetData'); // Fetch all data from the main sheet
+            console.log('Fetched mainSheetData for WOs:', allWorkOrderEntries); // Debugging log
 
             // Extract unique work orders from manufacture mode
             const uniqueOngoingWorkOrders = [...new Set(allWorkOrderEntries
@@ -1037,11 +1049,13 @@
                 optionsHTML += `<option value="${order}">${order}</option>`;
             });
             workOrder.innerHTML = optionsHTML;
+            console.log('Work Orders populated:', uniqueOngoingWorkOrders); // Debugging log
         }
 
         // Function to fetch and populate work order data for 'Ongoing' operations
         async function fetchAndPopulateWorkOrderData(workOrderId) {
             if (!workOrderId) return;
+            console.log('Fetching and populating data for work order:', workOrderId); // Debugging log
 
             loadingSpinner.style.display = 'block'; // Show spinner
             try {
@@ -1053,7 +1067,7 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`); // More detailed error
                 }
                 const result = await response.json();
 
@@ -1082,6 +1096,7 @@
                             aggregatedQuantities[partName][partProcess].in += inQty;
                         }
                     });
+                    console.log("Aggregated Quantities:", aggregatedQuantities); // Debugging log
 
                     // Clear and regenerate the parts table structure based on the Item Name associated with this WO
                     const itemForWO = fetchedRows.find(row => row.item)?.item;
